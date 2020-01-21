@@ -21,6 +21,9 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 api = Api(app)
 CORS(app)
 jwt = JWTManager(app)
+app.config['JWT_BLACKLIST_ENABLED'] = False
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+app.config['JWT_HEADER_TYPE'] = ""
 
 
 

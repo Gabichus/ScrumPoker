@@ -1,6 +1,6 @@
 import os
 
-backendAddress = '192.168.100.201'
+backendAddress = 'http://localhost:4999'
 
 postgres = {
     'user': 'gabichus',

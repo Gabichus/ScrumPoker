@@ -14,12 +14,13 @@ from config import backendAddress
 discovery_doc = loads(urlopen("https://accounts.google.com/.well-known/openid-configuration").read().decode("ascii"))
 
 client_id = "862399293797-q7m316vv5rlk05ppbhjrdh5hd15fcus9.apps.googleusercontent.com"
-client_secret = "nsEYkOJvBxSjiVd5FWg2QXo-"
+client_secret = "FV6zxEsSIoE3fnC9sK-I3CIM"
 redirect_url = backendAddress + "/login_from_google_2"
 
 
 def login_from_google_1():
     session['state'] = "security_token={}".format(str(uuid4()))
+    # session['typeApp'] = request.args.get('typeApp') 
     url = ("{}?client_id={}&".format(discovery_doc['authorization_endpoint'], client_id) +
            "response_type=code&scope=openid%20email&redirect_uri={}&".format(redirect_url) +
            "state={}&".format(session['state']) +

@@ -1,16 +1,20 @@
 from app import app, api, db, socketio, jwt
 from flask_restful import Api, Resource, reqparse
-from app.models import Task as taskModel, Project as projectModel
-from app.services import TaskSchema, getProjectTasks
+from app.models import Task as taskModel, Project as projectModel, TaskVoting as taskVotingModel
+from app.services import TaskSchema, getProjectTasks, projectTimeCalc
 from flask_socketio import send, emit, Namespace
-from sqlalchemy import asc
+from sqlalchemy import asc, and_
+from flask_jwt_extended import jwt_required
+from app.common.jwt_decorator import jwt_decorator
+
 
 class Task(Resource):
+    @jwt_required
     def get(self, id):
         sh = TaskSchema()
-
         return sh.dump(taskModel.query.get(id))
-
+    
+    @jwt_decorator()
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str)
@@ -40,11 +44,14 @@ class Task(Resource):
 
         socketData = getProjectTasks(project_id)
         socketio.emit('project', data=socketData, namespace='/poker')
+        socketio.emit('client', data="", namespace='/client')
+
         sh = TaskSchema(many=False, only=(
             'id', 'name', 'description', 'voting_status', 'time', 'flag'))
 
         return sh.dump(task)
-
+    
+    @jwt_decorator()
     def put(self, id):
         task = taskModel.query.get(id)
         if not task:
@@ -66,16 +73,53 @@ class Task(Resource):
 
         socketData = getProjectTasks(project_id)
         socketio.emit('project', data=socketData, namespace='/poker')
-
+        socketio.emit('client', data="", namespace='/client')
+   
+    @jwt_decorator()
     def delete(self, id):
         taskRemove = taskModel.query.get(id)
         if taskRemove is not None and taskRemove.child_task.first() is None:
             taskRemoveParent = taskRemove.parent.first()
-            project_id = taskRemove.project_id
+            project_id = taskRemove.project_id  # for create dump for socket
             if taskRemoveParent is not None:
                 taskRemoveParent.child_task.remove(taskRemove)
+            taskVotingModel.query.filter_by(task_id=id).delete()
             db.session.delete(taskRemove)
             db.session.commit()
 
         socketData = getProjectTasks(project_id)
         socketio.emit('project', data=socketData, namespace='/poker')
+        socketio.emit('client', data="", namespace='/client')
+   
+    @jwt_decorator()
+    def patch(self, id):
+        task = taskModel.query.get(id)
+        pr = task.project
+        taskVotingTrue = pr.tasks.filter(and_(taskModel.voting_status == True, taskModel.child_task == None)).all()
+
+        sh = TaskSchema(many=False, only=(
+            'id', 'name', 'description', 'voting_status', 'time', 'flag'))
+
+        parser = reqparse.RequestParser()
+        parser.add_argument('voting_status', type=bool)
+        parser.add_argument('time', type=int)
+
+        voting_status = parser.parse_args()['voting_status']
+        time = parser.parse_args()['time']
+        
+        print(time, voting_status)
+
+        if taskVotingTrue and voting_status:
+            return sh.dump(task)
+
+        if time is not None:
+            task.time = time
+        task.voting_status = voting_status
+        db.session.commit()
+
+        if not voting_status or time:
+            projectTimeCalc(pr.id)
+
+        socketio.emit('client', data="", namespace='/client')
+
+        return sh.dump(task)
