@@ -84,8 +84,8 @@ class Project(Resource):
         db.session.commit()
 
 class ProjectList(Resource):
-    # @jwt_required
-    @jwt_decorator()
+    @jwt_required
+    # @jwt_decorator()
     def get(self):
         projects = projectModel.query.order_by(asc(projectModel.id)).all()
         if not projects:

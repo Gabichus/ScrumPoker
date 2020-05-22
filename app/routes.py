@@ -10,6 +10,7 @@ from app.resources.logout import logout
 from app.resources.check_token import check_token
 from app.resources.update_token import update_token 
 from app.resources.weather import Weather
+from app.resources.login import Login
 
 api.add_resource(Weather, '/weather')
 
@@ -34,4 +35,6 @@ app.route("/login_from_google_1")(login_from_google_1)
 app.route("/login_from_google_2")(login_from_google_2)
 
 app.route('/logout')(logout)
+
+api.add_resource(Login,'/login')
 

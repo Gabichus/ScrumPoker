@@ -15,5 +15,5 @@ def user_loader_callback():
 
 
 if __name__ == '__main__':
-    socketio.run(app,host='0.0.0.0', debug=True, port='4999')
+    socketio.run(app,host='0.0.0.0', debug=True, port='1337')
     # socketio.run(app, debug=True, port='4999')
